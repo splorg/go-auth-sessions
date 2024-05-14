@@ -25,7 +25,8 @@ func main() {
 	authHandler := auth.NewAuthHandler(apiConfig)
 
 	app.Get("/healthcheck", authHandler.HealthCheck)
-	app.Post("/signin", authHandler.SignIn)
+	app.Post("/register", authHandler.Register)
+	app.Post("/login", authHandler.Login)
 	app.Post("/logout", authHandler.Logout)
 
 	port := os.Getenv("PORT")

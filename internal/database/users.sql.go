@@ -17,16 +17,18 @@ INSERT INTO users (
   id,
   name,
   username,
+  email,
   password,
   created_at,
   updated_at
-) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, name, username, email, password, created_at, updated_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, name, username, email, password, created_at, updated_at
 `
 
 type CreateUserParams struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Username  string    `json:"username"`
+	Email     string    `json:"email"`
 	Password  string    `json:"password"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -37,6 +39,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.ID,
 		arg.Name,
 		arg.Username,
+		arg.Email,
 		arg.Password,
 		arg.CreatedAt,
 		arg.UpdatedAt,

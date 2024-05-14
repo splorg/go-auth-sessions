@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/splorg/go-auth-sessions/internal/config"
+	"github.com/splorg/go-auth-sessions/internal/database"
 	"github.com/splorg/go-auth-sessions/internal/util"
 	"github.com/splorg/go-auth-sessions/internal/validator"
 )
@@ -28,11 +29,43 @@ func (h *AuthHandler) HealthCheck(c *fiber.Ctx) error {
   })
 }
 
-func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
+  var req RegisterDTO
+
+  if err := c.BodyParser(&req); err != nil {
+    return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
+  }
+
+  if err := validator.ValidateStruct(req); err != nil {
+    return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+  }
+
+  password, err := util.HashPassword([]byte(req.Password))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "Failed to encrypt password"})
+	}
+
+  newUser, err := h.DB.CreateUser(c.Context(), database.CreateUserParams{
+    ID: uuid.New(),
+    Name: req.Name,
+    Username: req.Username,
+    Password: string(password),
+    Email: req.Email,
+    CreatedAt: time.Now(),
+    UpdatedAt: time.Now(),
+  })
+  if err != nil {
+    return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+  }
+
+  return c.Status(fiber.StatusCreated).JSON(newUser)
+}
+
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
   var req LoginDTO
 
   if err := c.BodyParser(&req); err != nil {
-    return err
+    return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err.Error()})
   }
 
   if err := validator.ValidateStruct(req); err != nil {
@@ -67,9 +100,9 @@ func (h *AuthHandler) SignIn(c *fiber.Ctx) error {
 
   sessionID := uuid.New().String()
 
-  sessionData := map[string]interface{}{
-    "token": tokenString,
-    "userId": foundUser.ID,
+  sessionData := SessionData{
+    Token: tokenString,
+    UserId: foundUser.ID,
   }
 
   sessionDataJSON, err := json.Marshal(sessionData)
