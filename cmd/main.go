@@ -24,10 +24,14 @@ func main() {
 
 	authHandler := auth.NewAuthHandler(apiConfig)
 
-	app.Get("/healthcheck", authHandler.HealthCheck)
 	app.Post("/register", authHandler.Register)
 	app.Post("/login", authHandler.Login)
 	app.Post("/logout", authHandler.Logout)
+
+	protected := app.Group("/")
+	protected.Use(authHandler.AuthenticationMiddleware)
+
+	protected.Get("/healthcheck", authHandler.HealthCheck)
 
 	port := os.Getenv("PORT")
 	if port == "" {
