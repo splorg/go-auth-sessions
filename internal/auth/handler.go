@@ -83,10 +83,17 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 
 	sessionID := uuid.New().String()
 
+	headers := c.GetReqHeaders()
+	userAgent := headers[fiber.HeaderUserAgent][0]
+
 	sessionData := SessionData{
 		UserId:    foundUser.ID,
+		Username: foundUser.Username,
+		UserAgent: userAgent,
+		IPAddress: c.IP(),
 		Email:     foundUser.Email,
 		ExpiresAt: expirationTime,
+		CreatedAt: time.Now(),
 	}
 
 	sessionDataJSON, err := json.Marshal(sessionData)
