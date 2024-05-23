@@ -2,6 +2,8 @@
 
 Example/template repository setting up <ins>session</ins> authentication in Go.
 
+[Check the branch "net/http" for a version of this template made using the standard library instead of Fiber](https://github.com/splorg/go-auth-sessions/tree/net/http)
+
 This project uses:
 
 - [Fiber](https://gofiber.io/) for routing/middleware
