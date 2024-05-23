@@ -2,13 +2,14 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-
-	"github.com/splorg/go-auth-sessions/internal/auth"
 	"github.com/splorg/go-auth-sessions/internal/config"
+	"github.com/splorg/go-auth-sessions/internal/handler"
+	"github.com/splorg/go-auth-sessions/internal/middleware"
+	"github.com/splorg/go-auth-sessions/internal/router"
+	"github.com/splorg/go-auth-sessions/internal/util"
 	"github.com/splorg/go-auth-sessions/internal/validator"
 )
 
@@ -19,24 +20,31 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	app := fiber.New()
-	app.Use(cors.New(cors.Config{}))
-
-	authHandler := auth.NewAuthHandler(apiConfig)
-
-	app.Post("/register", authHandler.Register)
-	app.Post("/login", authHandler.Login)
-	app.Post("/logout", authHandler.Logout)
-
-	protected := app.Group("/")
-	protected.Use(authHandler.AuthenticationMiddleware)
-
-	protected.Get("/healthcheck", authHandler.HealthCheck)
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("PORT is not defined in .env")
 	}
 
-	app.Listen(port)
+	mux := http.NewServeMux()
+
+	authHandler := handler.NewAuthHandler(apiConfig)
+
+	public := router.NewRouteGroup(mux, apiConfig, middleware.Logging)
+	protected := router.NewRouteGroup(mux, apiConfig, middleware.Logging, middleware.Authenticate)
+
+	public.HandleFunc("POST /register", authHandler.Register)
+	public.HandleFunc("POST /login", authHandler.Login)
+	public.HandleFunc("POST /logout", authHandler.Logout)
+
+	protected.HandleFunc("GET /healthcheck", func(w http.ResponseWriter, r *http.Request) *handler.APIError {
+		util.WriteJson(w, http.StatusOK, map[string]string{"message": "OK"})
+		return nil
+	})
+
+	server := http.Server{
+		Addr:    port,
+		Handler: mux,
+	}
+
+	server.ListenAndServe()
 }

@@ -4,7 +4,7 @@ Example/template repository setting up <ins>session</ins> authentication in Go.
 
 This project uses:
 
-- [Fiber](https://gofiber.io/) for routing/middleware
+- Go 1.22 net/http routing (NewServeMux)
 - [Goose](https://pressly.github.io/goose/) for database migrations
 - [SQLC](https://sqlc.dev/) for generating type-safe code for SQL queries
 - [Redis](https://redis.io/) for storing user sessions
